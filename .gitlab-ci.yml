@@ -1,0 +1,34 @@
+Claim-Facts-Vectordb:
+  stage: deploy
+  tags:
+    - claim-facts-vectordb
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - echo "Deploy to Staging Server"
+    - ssh-add <(echo "$ID_RSA_DEV")
+    - |
+      ssh -o StrictHostKeyChecking=no claim-facts-vectordb@10.10.11.44 << 'ENDSSH'
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        cd /home/claim-facts-vectordb/backend
+
+        echo "Resetting and pulling latest code..."
+        git reset --hard
+        git pull
+
+        echo "Activating virtual environment and installing Python requirements..."
+        source venv/bin/activate
+        pip install -r requirements.txt
+
+        echo "Restarting PM2 processes..."
+        pm2 restart all --time
+
+        echo "Deployment complete"
+      ENDSSH
+
+  only:
+    - stage
