@@ -136,71 +136,71 @@ async def search(query: SearchQuery):
     Returns:
         dict: Search results with scores and metadata
     """
-    # try:
-    # Generate embedding for the query
-    query_embedding = embedding_service.generate_embedding(query.query)
-    
-    # Build search filters
-    filters = []
-    if query.content_type:
-        filters.append({
-            "key": "type",
-            "match": {"value": query.content_type.value}
-        })
-    
-    if query.filter:
-        for key, value in query.filter.items():
-            if key.startswith("metadata."):
-                # Handle nested metadata filters
-                metadata_key = key.split(".", 1)[1]
-                filters.append({
-                    "key": f"metadata.{metadata_key}",
-                    "match": {"value": value}
-                })
-            else:
-                filters.append({
-                    "key": key,
-                    "match": {"value": value}
-                })
-    
-    # Perform the search
-    search_results = vector_db.search(
-        vector=query_embedding,
-        filter=filters if filters else None,
-        limit=query.limit
-    )
-    
-    # Format results
-    formatted_results = []
-    for result in search_results:
-        if result.score > 0.3:
-            item = {
-                "content_id": result.payload["content_id"],
-                "type": result.payload["type"],
-                "score": result.score,
-                "text": result.payload["text"][:1000],  # Return first 1000 chars
-                "metadata": result.payload.get("metadata", {}),
-                "created_at": result.payload.get("created_at")
-            }
-            
-            # Add type-specific fields
-            if result.payload["type"] == "document":
-                item["filename"] = result.payload.get("filename")
-            elif result.payload["type"] == "email":
-                item["subject"] = result.payload.get("subject")
-                item["participants"] = result.payload.get("participants", [])
-            
-            formatted_results.append(item)
-    
-    return {
-        "status": "success",
-        "query": query.query,
-        "results": formatted_results,
-        "count": len(formatted_results)
-    }
+    try:
+        # Generate embedding for the query
+        query_embedding = embedding_service.generate_embedding(query.query)
+        
+        # Build search filters
+        filters = []
+        if query.content_type:
+            filters.append({
+                "key": "type",
+                "match": {"value": query.content_type.value}
+            })
+        
+        if query.filter:
+            for key, value in query.filter.items():
+                if key.startswith("metadata."):
+                    # Handle nested metadata filters
+                    metadata_key = key.split(".", 1)[1]
+                    filters.append({
+                        "key": f"metadata.{metadata_key}",
+                        "match": {"value": value}
+                    })
+                else:
+                    filters.append({
+                        "key": key,
+                        "match": {"value": value}
+                    })
+        
+        # Perform the search
+        search_results = vector_db.search(
+            vector=query_embedding,
+            filter=filters if filters else None,
+            limit=query.limit
+        )
+        
+        # Format results
+        formatted_results = []
+        for result in search_results:
+            if result.score > 0.3:
+                item = {
+                    "content_id": result.payload["content_id"],
+                    "type": result.payload["type"],
+                    "score": result.score,
+                    "text": result.payload["text"][:1000],  # Return first 1000 chars
+                    "metadata": result.payload.get("metadata", {}),
+                    "created_at": result.payload.get("created_at")
+                }
+                
+                # Add type-specific fields
+                if result.payload["type"] == "document":
+                    item["filename"] = result.payload.get("filename")
+                elif result.payload["type"] == "email":
+                    item["subject"] = result.payload.get("subject")
+                    item["participants"] = result.payload.get("participants", [])
+                
+                formatted_results.append(item)
+        
+        return {
+            "status": "success",
+            "query": query.query,
+            "results": formatted_results,
+            "count": len(formatted_results)
+        }
 
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"Search failed: {str(e)}"
-    #     )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search failed: {str(e)}"
+        )
