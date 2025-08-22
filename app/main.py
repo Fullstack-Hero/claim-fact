@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import router as api_router
 from app.services.vector_db import VectorDB
 from app.services.embedding import EmbeddingService
@@ -7,6 +8,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="VectorDB API", description="API for Qdrant VectorDB")
+
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://light.claritymarket.com",
+        "*", 
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize services
 vector_db = VectorDB()
