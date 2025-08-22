@@ -123,7 +123,8 @@ class VectorDB:
             collection_name=self.collection_name,
             query_vector=vector,
             query_filter=qdrant_filter,
-            limit=limit
+            limit=limit,
+            score_threshold=0.3
         )
 
     def find_by_content_id(self, content_id: str):

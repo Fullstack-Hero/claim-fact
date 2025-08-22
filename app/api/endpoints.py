@@ -173,24 +173,23 @@ async def search(query: SearchQuery):
         # Format results
         formatted_results = []
         for result in search_results:
-            if result.score > 0.3:
-                item = {
-                    "content_id": result.payload["content_id"],
-                    "type": result.payload["type"],
-                    "score": result.score,
-                    "text": result.payload["text"][:1000],  # Return first 1000 chars
-                    "metadata": result.payload.get("metadata", {}),
-                    "created_at": result.payload.get("created_at")
-                }
-                
-                # Add type-specific fields
-                if result.payload["type"] == "document":
-                    item["filename"] = result.payload.get("filename")
-                elif result.payload["type"] == "email":
-                    item["subject"] = result.payload.get("subject")
-                    item["participants"] = result.payload.get("participants", [])
-                
-                formatted_results.append(item)
+            item = {
+                "content_id": result.payload["content_id"],
+                "type": result.payload["type"],
+                "score": result.score,
+                "text": result.payload["text"][:1000],  # Return first 1000 chars
+                "metadata": result.payload.get("metadata", {}),
+                "created_at": result.payload.get("created_at")
+            }
+            
+            # Add type-specific fields
+            if result.payload["type"] == "document":
+                item["filename"] = result.payload.get("filename")
+            elif result.payload["type"] == "email":
+                item["subject"] = result.payload.get("subject")
+                item["participants"] = result.payload.get("participants", [])
+            
+            formatted_results.append(item)
         
         return {
             "status": "success",
