@@ -1,15 +1,18 @@
 from fastapi import APIRouter, HTTPException
 from qdrant_client import QdrantClient, models
-from typing import List
+from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException, status
-from app.models.schemas import ContentItem, AddResponse, UpdateRequest, SearchQuery
+from app.models.schemas import ContentItem, AddResponse, EmailThreadRequest, UpdateRequest, SearchQuery
 from app.services.vector_db import VectorDB
 from app.services.embedding import EmbeddingService
+from app.services.email_parser import EmailParserService
 from app.utils.helpers import generate_content_id, generate_point_id, create_payload
 
 router = APIRouter()
 vector_db = VectorDB()
 embedding_service = EmbeddingService()
+email_parser_service  = EmailParserService()
+
 
 @router.post("/add/", response_model=List[AddResponse])
 async def add_items(items: List[ContentItem]):
@@ -203,3 +206,17 @@ async def search(query: SearchQuery):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Search failed: {str(e)}"
         )
+
+@router.post("/parse-email-thread", response_model=Dict[str, Any])
+async def parse_email_thread(request: EmailThreadRequest):
+    """
+    Parse an email thread using OpenAI API and return structured JSON
+    Uses GPT-4o for handling email threads with good token limits
+    """
+    try:
+        # Prepare the email content
+        email_content = request.email_data.stripped_text or request.email_data.body_plain or ""
+        # Use the email parser service
+        return await email_parser_service.parse_email_thread(email_content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error parsing email thread: {str(e)}")
