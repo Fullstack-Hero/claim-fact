@@ -61,16 +61,9 @@ async def update_item(update_request: UpdateRequest):
         dict: Operation result with status and details
     """
     try:
-        try:
-            # Find the existing item by content_id
-            search_result = vector_db.find_by_content_id(update_request.content_id)
-        except ValueError as e:
-            if "index" in str(e).lower():
-                # If it's an index error, try to create the index
-                vector_db._ensure_indexes()
-                search_result = vector_db.find_by_content_id(update_request.content_id)
-            else:
-                raise
+        # Find the existing item by content_id
+        search_result = vector_db.find_by_content_id(update_request.content_id)
+        
         if not search_result or not search_result[0]:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -151,20 +144,16 @@ async def search(query: SearchQuery):
                 "match": {"value": query.content_type.value}
             })
         
-        if query.filter:
-            for key, value in query.filter.items():
-                if key.startswith("metadata."):
-                    # Handle nested metadata filters
-                    metadata_key = key.split(".", 1)[1]
-                    filters.append({
-                        "key": f"metadata.{metadata_key}",
-                        "match": {"value": value}
-                    })
-                else:
-                    filters.append({
-                        "key": key,
-                        "match": {"value": value}
-                    })
+        # if query.filter:
+        #     for key, value in query.filter.items():
+        #         # Only allow filtering on indexed fields (type and content_id)
+        #         if key in ["type", "content_id"]:
+        #             filters.append({
+        #                 "key": key,
+        #                 "match": {"value": value}
+        #             })
+        #         else:
+        #             print(f"Warning: Filtering on '{key}' is not supported as it's not indexed")
         
         # Perform the search
         search_results = vector_db.search(

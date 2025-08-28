@@ -29,7 +29,7 @@ class UpdateRequest(BaseModel):
 
 class SearchQuery(BaseModel):
     query: str
-    filter: Optional[Dict] = None
+    # filter: Optional[Dict] = None
     limit: int = 5
     content_type: Optional[ContentType] = None
 

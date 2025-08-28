@@ -65,18 +65,6 @@ class VectorDB:
                 else:
                     print(f"Failed to create index for {field_name}: {str(e)}")
 
-    def ensure_metadata_index(self, metadata_key: str):
-        """Ensure index exists for a metadata field"""
-        try:
-            self.client.create_payload_index(
-                collection_name=self.collection_name,
-                field_name=f"metadata.{metadata_key}",
-                field_schema=models.PayloadSchemaType.KEYWORD
-            )
-        except Exception as e:
-            if "already exists" not in str(e):
-                print(f"Failed to create metadata index for {metadata_key}: {str(e)}")
-
     def add_items(self, points: List[models.PointStruct]):
         return self.client.upsert(
             collection_name=self.collection_name,
@@ -103,12 +91,6 @@ class VectorDB:
     def search(self, vector: List[float], filter: Optional[List[Dict]] = None, limit: int = 5):
         qdrant_filter = None
         if filter:
-            # First ensure indexes exist for all filter fields
-            for f in filter:
-                if f["key"].startswith("metadata."):
-                    metadata_key = f["key"].split(".", 1)[1]
-                    self.ensure_metadata_index(metadata_key)
-                    
             # Convert list of filter dicts to Qdrant Filter object
             conditions = []
             for f in filter:
